@@ -220,6 +220,27 @@ contains
         end if
     end subroutine next
 
+    subroutine solve_vander_trans(x, b, n)
+        integer, intent(in) :: n
+        real(kind=prec), intent(in) :: x(n)
+        real(kind=prec), intent(inout) :: b(n)
+
+        integer i, k
+      ! Algorithm 4.6.2 from Golub/van Loan
+        do k = 1, n-1
+            do i = n, k+1, -1
+                b(i) = b(i) - x(k)*b(i-1)
+            end do
+        end do
+        do k = n-1, 1, -1
+            do i = k+1, n
+                b(i) = b(i)/(x(i)-x(i-k))
+            end do
+            do i = k, n-1
+                b(i) = b(i) - b(i+1)
+            end do
+       end do
+    end subroutine solve_vander_trans
 
 
 end module exponential_multistep
