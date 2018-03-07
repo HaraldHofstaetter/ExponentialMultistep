@@ -1,11 +1,16 @@
 module exponential_multistep
-!    time_stepper = adaptive_adams_lawson(psi, t0, tend, tol, dt0, p)
-!    do while (.not. time_stepper%done() )
+! Usage:
 !
-!         ! do something with psi
+!   time_stepper = adaptive_adams_lawson(psi, t0, tend, tol, dt0, p)
+!   do while (.not. time_stepper%done() )
 !
-!       call time_stepper%next
-!    end do
+!        ! do something ...
+!
+!      call time_stepper%next
+!
+!         ! do something ...
+!
+!   end do
 
     use wavefunctions_fourier1d
 
@@ -15,25 +20,24 @@ module exponential_multistep
         private
         
         real(kind=prec) :: t
-        type(wf_fourier1d), pointer :: psi
+        type(wf_fourier1d), pointer :: psi !>>>
         real(kind=prec) :: t0
         real(kind=prec) :: tend
         real(kind=prec) :: tol
         real(kind=prec) :: dt
 
-        integer :: n
-        integer :: n1
+        integer :: p
         integer :: ptr
         real(kind=prec), allocatable :: t_back(:)
-        type(wf_fourier1d), allocatable :: rhs_back(:)
-        type(wf_fourier1d) :: psi0 
-        type(wf_fourier1d) :: psi1 
+        type(wf_fourier1d), allocatable :: rhs_back(:) !>>>
+        type(wf_fourier1d) :: psi0 !>>> 
+        type(wf_fourier1d) :: psi1 !>>>
 
         real(kind=prec), allocatable :: tt(:)
         real(kind=prec), allocatable :: c(:)
 
         logical :: bootstrap_mode
-        integer :: n1_final
+        integer :: p_final
 
     contains
         procedure :: done
@@ -55,9 +59,9 @@ contains
         integer, intent(in), optional :: p
         real(kind=prec), intent(in), optional :: dt0
 
-        integer :: n_final, j
+        integer :: j
 
-        this%psi => psi
+        this%psi => psi !>>>
         this%t = t0
         this%tend = tend
         this%tol = tol 
@@ -68,32 +72,31 @@ contains
             this%dt = tol
         end if
         if (present(p)) then
-            this%n1_final = p
+            this%p_final = p
         else
-            this%n1_final = 4 
+            this%p_final = 4 !default value
         end if
 
-        this%n   = 2 
-        this%n1  = 1
+        this%p  = 1
         this%bootstrap_mode = .true.
-        n_final = this%n1_final + 1
 
-        allocate( this%t_back(n_final) )
+        allocate( this%t_back(this%p_final+1) )
         this%t_back = 0.0_prec
-        allocate( this%rhs_back(n_final) )
-        do j =1,n_final
-            this%rhs_back(j) = wf_fourier1d(psi%m)
+        allocate( this%rhs_back(this%p_final+1) ) !>>>
+        do j =1,this%p_final+1
+            this%rhs_back(j) = wf_fourier1d(psi%m) !>>>
         end do
 
+        !>>> rhs_back(1) = B(psi)
         call psi%eval_B(this%rhs_back(1))
         
-        this%psi0 = wf_fourier1d(psi%m)
-        this%psi1 = wf_fourier1d(psi%m)
+        this%psi0 = wf_fourier1d(psi%m) !>>>
+        this%psi1 = wf_fourier1d(psi%m) !>>>
 
-        allocate( this%tt(n_final) )
-        allocate( this%c(n_final) )
+        allocate( this%tt(this%p_final+1) )
+        allocate( this%c(this%p_final+1) )
 
-        this%ptr = this%n1
+        this%ptr = this%p
 
     end function new_adaptive_adams_lawson
 
@@ -108,12 +111,12 @@ contains
         if (f) then
             ! destructor
             deallocate( this%t_back )
-            do j = 1, this%n1_final + 1
-                call this%rhs_back(j)%finalize
+            do j = 1, this%p_final + 1
+                call this%rhs_back(j)%finalize !>>>
             end do
-            deallocate( this%rhs_back )
-            call this%psi0%finalize
-            call this%psi1%finalize
+            deallocate( this%rhs_back ) !>>>
+            call this%psi0%finalize !>>>
+            call this%psi1%finalize !>>>
             deallocate( this%tt )
             deallocate( this%c )
         end if
@@ -124,6 +127,7 @@ contains
         implicit none
         class(adaptive_adams_lawson), intent(inout) :: this
 
+      ! parameters for stepsize selection    
         real(kind=prec), parameter :: facmin = 0.25_prec
         real(kind=prec), parameter :: facmax = 4.0_prec
         real(kind=prec), parameter :: fac    = 0.9_prec
@@ -132,8 +136,8 @@ contains
         integer :: ptr0
         integer :: j, k, k1 
 
-        call this%psi0%copy(this%psi) ! psi0 = psi
-        call this%psi1%copy(this%psi) ! psi1 = psi
+        call this%psi0%copy(this%psi) !>>> psi0 = psi
+        call this%psi1%copy(this%psi) !>>> psi1 = psi
 
         ptr0 = this%ptr
         err = 2.0_prec
@@ -145,79 +149,88 @@ contains
           ! *** predictor
 
           ! recompute coefficients
-            do k= 1, this%n1
-                this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-1 +this%n, this%n)+1)
+            do k= 1, this%p
+                this%tt(k) = this%t_back(mod(k-this%p+this%ptr-1 +this%p+1, this%p+1)+1)
             end do    
-            do k= 1, this%n1
-                this%tt(k) = this%tt(k)-this%tt(this%n1)
+            do k= 1, this%p
+                this%tt(k) = this%tt(k)-this%tt(this%p)
             end do
-            do k= 0, this%n1-1
+            do k= 0, this%p-1
                 this%c(k+1) =  this%dt**k/(k+1.0_prec)
             end do
-            call solve_vander_trans(this%tt, this%c, this%n1)  
+            call solve_vander(this%tt, this%c, this%p)  
 
-            do k= 1, this%n1
-                k1 = mod(k-this%n1+this%ptr-1 +this%n, this%n) + 1
+            do k= 1, this%p
+                k1 = mod(k-this%p+this%ptr-1 +this%p+1, this%p+1) + 1
+                !>>> psi1 = psi1 + (c(k)*dt)*rhs_back(k1)
                 call this%psi1%axpy(this%rhs_back(k1), cmplx(this%c(k)*this%dt, kind=prec))
             end do
+            !>>> psi1 = exp(dt*A)*psi1
             call this%psi1%propagate_A(this%dt) 
 
             if (this%bootstrap_mode) then
                 this%ptr = this%ptr + 1
             else
-                this%ptr = mod(this%ptr, this%n) + 1
+                this%ptr = mod(this%ptr, this%p+1) + 1
             end if
 
-            call this%psi1%eval_B(this%rhs_back(this%ptr)) !! TODO
+            !>>> rhs_back(ptr) = B(psi1)
+            call this%psi1%eval_B(this%rhs_back(this%ptr)) 
             this%t_back(this%ptr) = this%t+this%dt
 
             call this%rhs_back(this%ptr)%propagate_A(-this%dt)
           ! *** corrector
 
           ! recompute coefficients (one more than for predictor)
-            do k = 1, this%n1+1
-                this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-2 +this%n, this%n)+1)
+            do k = 1, this%p+1
+                this%tt(k) = this%t_back(mod(k-this%p+this%ptr-2 +this%p+1, this%p+1)+1)
             end do    
-            h = this%tt(this%n1)
-            do k = 1, this%n1+1
+            h = this%tt(this%p)
+            do k = 1, this%p+1
                 this%tt(k) = this%tt(k)-h
             end do
-            do k = 0, this%n1
+            do k = 0, this%p
                 this%c(k+1) =  this%dt**k/(k+1.0_prec)
             end do
-            call solve_vander_trans(this%tt, this%c, this%n1+1) 
+            call solve_vander(this%tt, this%c, this%p+1) 
 
-            do k = 1, this%n1+1
-                k1 = mod(k-this%n1+this%ptr-2 +this%n, this%n) + 1
+            do k = 1, this%p+1
+                k1 = mod(k-this%p+this%ptr-2 +this%p+1, this%p+1) + 1
+                !>>> psi = psi + (c(k)*dt)*rhs_back(k1)
                 call this%psi%axpy(this%rhs_back(k1), cmplx(this%c(k)*this%dt, kind=prec))
             end do
+            !>>> psi = exp(dt*A)*psi
             call this%psi%propagate_A(this%dt)   
 
           ! compute error estimate and new stepsize
+            !>>> err=||psi-psi1||/tol
             err = this%psi%distance(this%psi1)/this%tol
-            this%dt = this%dt*min(facmax, max(facmin, fac*(1.0_prec/err)**(1.0_prec/(real(this%n1, kind=prec)+1_prec))))
+          ! compute new stepize using eq. (II.4.13) in   
+          ! Hairer/Norsett/Wanner, Solving Ordinary Differential Equations I, 2nd ed.
+            this%dt = this%dt*min(facmax, max(facmin, fac*(1.0_prec/err)**(1.0_prec/(real(this%p, kind=prec)+1_prec))))
 
             if (err .ge. 1.0_prec) then ! reject step
-                call this%psi1%copy(this%psi0)
-                call this%psi%copy(this%psi0)
+                call this%psi1%copy(this%psi0) !>>> psi1 = psi0
+                call this%psi%copy(this%psi0)  !>>> psi  = psi0
                 this%ptr = ptr0
                 print *, "t=", this%t, " err=", err, " dt=", this%dt, " rejected..."
             end if
         end do
 
-        call this%psi%eval_B(this%rhs_back(this%ptr)) !! TODO
+        !>>> rhs_back(ptr) = B(psi)
+        call this%psi%eval_B(this%rhs_back(this%ptr)) 
         this%t = this%t + dt0
         this%t_back(this%ptr) = this%t
     
-        do k = 1, this%n
+        do k = 1, this%p+1
             if (k .ne. this%ptr) then 
+                !>> rhs_back(k) = exp(dt0*A)*rhs_back(k)
                 call this%rhs_back(k)%propagate_A(dt0)
             end if
         end do  
         if (this%bootstrap_mode) then
-            if (this%n1_final .gt. this%n1) then
-                this%n1 = this%n1+1
-                this%n = this%n+1
+            if (this%p_final .gt. this%p) then
+                this%p = this%p+1
             else
                 this%bootstrap_mode = .false.
             end if
@@ -225,13 +238,17 @@ contains
     end subroutine next
 
 
-    subroutine solve_vander_trans(x, b, n)
+    subroutine solve_vander(x, b, n)
         integer, intent(in) :: n
         real(kind=prec), intent(in) :: x(n)
         real(kind=prec), intent(inout) :: b(n)
 
+      ! Algorithm 4.6.2 from Golub/van Loan, Matrix Computations.
+      ! Solve Vz=b, where V is the Vandermonde matrix with respect 
+      ! to x=(x(1),...,x(n)); b is overwritten by the solution z.
+
         integer i, k
-      ! Algorithm 4.6.2 from Golub/van Loan
+
         do k = 1, n-1
             do i = n, k+1, -1
                 b(i) = b(i) - x(k)*b(i-1)
@@ -245,7 +262,7 @@ contains
                 b(i) = b(i) - b(i+1)
             end do
        end do
-    end subroutine solve_vander_trans
+    end subroutine solve_vander
 
 
 end module exponential_multistep
