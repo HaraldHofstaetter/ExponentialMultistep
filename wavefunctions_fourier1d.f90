@@ -5,7 +5,7 @@ module wavefunctions_fourier1d
 
   ! FFTW stuff
     include 'fftw3.f03'
-    integer(C_INT) :: fftw_planning_rigor = FFTW_PATIENT
+    integer(c_int) :: fftw_planning_rigor = FFTW_PATIENT
     character(len=64, kind=c_char) :: fftw_wisdom_file = c_char_'fftw_wisdom' // c_null_char    
     
     integer, parameter :: prec=selected_real_kind(p=15)
@@ -13,7 +13,6 @@ module wavefunctions_fourier1d
     public :: fourier1d, wf_fourier1d, psi_1d, B_1d
 
     abstract interface
-    
         function psi_1d(x, t)
             import prec
             complex(kind=prec) :: psi_1d
@@ -50,14 +49,12 @@ module wavefunctions_fourier1d
 
 
     type wf_fourier1d
-      ! high level data
         class(fourier1d), pointer   :: m 
         real(kind=prec)             :: time = 0.0_prec
         complex(kind=prec), pointer :: u(:)
 
-      ! lower level data
-        type(c_ptr)  :: plan_forward 
-        type(c_ptr)  :: plan_backward        
+        type(c_ptr), private  :: plan_forward 
+        type(c_ptr), private  :: plan_backward        
     contains
         procedure :: set
         procedure :: print
@@ -105,7 +102,7 @@ contains
             this%eigvals_A(m:nx) = (/ (real(k, kind=prec)**2, k=m-nx-1, -1) /)
             this%eigvals_A = ((2.0_prec*pi/d)**2/2.0_prec) * this%eigvals_A
 
-      ! initialize if not already been done
+      ! initialize fftw if not already been done
         if (.not. fftw_already_initialized) then
             ret = fftw_import_wisdom_from_filename(fftw_wisdom_file)
             fftw_already_initialized = .true.
@@ -208,7 +205,8 @@ contains
         call fftw_execute_dft(this%plan_backward, this%u, this%u)
 
       ! scale by 1/nx (not already done by fftw)  
-        this%u = cmplx(1.0_prec/this%m%nx, kind=prec)*this%u
+        !this%u = cmplx(1.0_prec/this%m%nx, kind=prec)*this%u
+        this%u = (1.0_prec/this%m%nx)*this%u
 
       ! propagate time:
         this%time = this%time + dt        
