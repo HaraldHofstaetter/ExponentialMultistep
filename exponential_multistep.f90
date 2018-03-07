@@ -45,15 +45,15 @@ module exponential_multistep
     end interface adaptive_adams_lawson
 
 contains
-    function new_adaptive_adams_lawson(psi, t0, tend, tol, dt0, p) result(this)
+    function new_adaptive_adams_lawson(psi, t0, tend, tol, p, dt0) result(this)
         implicit none
         type(adaptive_adams_lawson) :: this
         type(wf_fourier1d), target, intent(in) :: psi
         real(kind=prec), intent(in) :: t0
         real(kind=prec), intent(in) :: tend
         real(kind=prec), intent(in) :: tol
-        real(kind=prec), intent(in), optional :: dt0
         integer, intent(in), optional :: p
+        real(kind=prec), intent(in), optional :: dt0
 
         integer :: n_final, j
 
@@ -142,7 +142,7 @@ contains
 
           ! recompute coefficients
             do k= 1, this%n1
-                this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-1, this%n)+1)
+                this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-1 +this%n, this%n)+1)
             end do    
             do k= 1, this%n1
                 this%tt(k) = this%tt(k)-this%tt(this%n1)
@@ -153,7 +153,7 @@ contains
             call solve_vander_trans(this%tt, this%c, this%n1)  !! TODO
 
             do k= 1, this%n1
-                k1 = mod(k-this%n1+this%ptr-1, this%n) + 1
+                k1 = mod(k-this%n1+this%ptr-1 +this%n, this%n) + 1
                 call this%psi1%axpy(this%rhs_back(k1), cmplx(this%c(k)*this%dt, kind=prec))
             end do
             call this%psi1%propagate_A(this%dt)   
@@ -164,16 +164,15 @@ contains
                 this%ptr = mod(this%ptr, this%n) + 1
             end if
 
-            call this%psi1%eval_B(this.rhs_back(this%ptr)) !! TODO
+            call this%psi1%eval_B(this%rhs_back(this%ptr)) !! TODO
             this%t_back(this%ptr) = this%t+this%dt
 
             call this%rhs_back(this%ptr)%propagate_A(-this%dt)
-          
           ! *** corrector
 
           ! recompute coefficients (one more than for predictor)
             do k = 1, this%n1+1
-                this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-2, this%n)+1)
+                this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-2 +this%n, this%n)+1)
             end do    
             do k = 1, this%n1+1
                 this%tt(k) = this%tt(k)-this%tt(this%n1)
@@ -184,7 +183,7 @@ contains
             call solve_vander_trans(this%tt, this%c, this%n1+1)  !! TODO
 
             do k = 1, this%n1+1
-                k1 = mod(k-this%n1+this%ptr-2, this%n) + 1
+                k1 = mod(k-this%n1+this%ptr-2 +this%n, this%n) + 1
                 call this%psi%axpy(this%rhs_back(k1), cmplx(this%c(k)*this%dt, kind=prec))
             end do
             call this%psi%propagate_A(this%dt)   
@@ -201,7 +200,7 @@ contains
             end if
         end do
 
-        call this%psi%eval_B(this.rhs_back(this%ptr)) !! TODO
+        call this%psi%eval_B(this%rhs_back(this%ptr)) !! TODO
         this%t = this%t + dt0
         this%t_back(this%ptr) = this%t
     
@@ -219,6 +218,7 @@ contains
             end if
         end if
     end subroutine next
+
 
     subroutine solve_vander_trans(x, b, n)
         integer, intent(in) :: n

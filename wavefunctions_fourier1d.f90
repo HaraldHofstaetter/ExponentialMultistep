@@ -10,18 +10,37 @@ module wavefunctions_fourier1d
     
     integer, parameter :: prec=selected_real_kind(p=15)
 
-    public :: fourier1d, wf_fourier1d
+    public :: fourier1d, wf_fourier1d, psi_1d, B_1d
 
+    abstract interface
+    
+        function psi_1d(x, t)
+            import prec
+            complex(kind=prec) :: psi_1d
+            real(kind=prec), intent(in) :: x
+            real(kind=prec), intent(in) :: t
+        end function psi_1d
+
+        function B_1d(u, x, t)
+            import prec
+            complex(kind=prec) :: B_1d
+            complex(kind=prec), intent(in) :: u
+            real(kind=prec), intent(in) :: x
+            real(kind=prec), intent(in) :: t
+        end function B_1d
+    end interface
 
     type fourier1d
         real(kind=prec) :: xmin
         real(kind=prec) :: xmax
         integer         :: nx
 
+        procedure(B_1d), pointer, nopass :: B_ptr => null()
         real(kind=prec) :: dx
         real(kind=prec), allocatable :: nodes_x(:)
         real(kind=prec), allocatable :: eigvals_A(:)
     contains
+        procedure :: set_B
         procedure :: finalize => finalize_method
     end type fourier1d
    
@@ -43,6 +62,7 @@ module wavefunctions_fourier1d
         procedure :: set
         procedure :: print
         procedure :: propagate_A
+        procedure :: eval_B
         procedure :: copy
         procedure :: scale
         procedure :: axpy
@@ -83,7 +103,7 @@ contains
             d = xmax-xmin
             this%eigvals_A(1:m)  = (/ (real(k, kind=prec)**2, k=1-1, m-1) /)
             this%eigvals_A(m:nx) = (/ (real(k, kind=prec)**2, k=m-nx-1, -1) /)
-            this%eigvals_A = (-(2.0_prec*pi/d)**2/2.0_prec) * this%eigvals_A
+            this%eigvals_A = ((2.0_prec*pi/d)**2/2.0_prec) * this%eigvals_A
 
       ! initialize if not already been done
         if (.not. fftw_already_initialized) then
@@ -91,6 +111,14 @@ contains
             fftw_already_initialized = .true.
         end if
     end function new_method
+
+
+    subroutine set_B(this, B)
+        class(fourier1d), intent(inout) :: this
+        complex(kind=prec), external :: B
+     
+        this%B_ptr => B
+    end subroutine set_B    
 
 
     subroutine finalize_method(this)
@@ -174,7 +202,7 @@ contains
         call fftw_execute_dft(this%plan_forward, this%u, this%u) 
       
       ! apply exponentiated operator (diagonal in frequency space)
-        this%u = exp(cmplx(0.0_prec, dt, kind=prec)*this%m%eigvals_A) * this%u
+        this%u = exp(cmplx(0.0_prec, -dt, kind=prec)*this%m%eigvals_A) * this%u
 
       ! back-transform to real space 
         call fftw_execute_dft(this%plan_backward, this%u, this%u)
@@ -185,6 +213,23 @@ contains
       ! propagate time:
         this%time = this%time + dt        
     end subroutine propagate_A
+
+
+    subroutine eval_B(this, other)  ! other = B(psi)
+        implicit none
+        class(wf_fourier1d) :: this
+        class(wf_fourier1d), intent(inout) :: other 
+
+        integer :: ix
+
+        if (associated(this%m%B_ptr)) then
+            do ix = 1,this%m%nx
+                other%u(ix) = (0.0_prec, -1.0_prec)*this%m%B_ptr(this%u(ix), this%m%nodes_x(ix), this%time)
+            end do
+        else
+            other%u = 0.0_prec
+        end if
+    end subroutine eval_B 
 
 
     subroutine scale(this, fac) ! this = fac*this
