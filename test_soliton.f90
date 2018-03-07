@@ -23,24 +23,18 @@ program test_soliton
     psi = wf_fourier1d(m)
     call psi%set(soliton, t0)
 
-!    call psi%eval_B(psi_ex)
-!    print *, "time=", psi%time
-!    print *, "soliton(-.125,0)=", soliton(-.125_prec, 0.0_prec)
-!    print *, "B(..)=", B((1.9239578542199571_prec,0.24175518693680464_prec), -.125_prec, .0_prec)
-!    call psi_ex%print
-
     p = 4
-    tol = 1e-8_prec
+    tol = 1e-5_prec
 
-    time_stepper = adaptive_adams_lawson(psi, t0, tend, tol, p)
     step = 0
     time_old = psi%time
+    time_stepper = adaptive_adams_lawson(psi, t0, tend, tol, p, tol)
     do while (.not. time_stepper%done() )
+         call time_stepper%next
+
          print *, "step=",step," t=", psi%time, " dt=", psi%time-time_old
-         
          time_old = psi%time
          step = step + 1
-       call time_stepper%next
     end do
 
   ! compute the error of the (numerically) propagated solution
@@ -74,7 +68,7 @@ contains
         real(kind=prec), intent(in) :: x
         real(kind=prec), intent(in) :: t
 
-        real(prec), parameter :: alpha = 0.0_prec
+        real(prec), parameter :: alpha = 0.5_prec
 
         complex(kind=prec) :: u_ex
 

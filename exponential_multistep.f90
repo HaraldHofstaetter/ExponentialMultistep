@@ -79,10 +79,14 @@ contains
         n_final = this%n1_final + 1
 
         allocate( this%t_back(n_final) )
+        this%t_back = 0.0_prec
         allocate( this%rhs_back(n_final) )
         do j =1,n_final
             this%rhs_back(j) = wf_fourier1d(psi%m)
         end do
+
+        call psi%eval_B(this%rhs_back(1))
+        
         this%psi0 = wf_fourier1d(psi%m)
         this%psi1 = wf_fourier1d(psi%m)
 
@@ -124,7 +128,7 @@ contains
         real(kind=prec), parameter :: facmax = 4.0_prec
         real(kind=prec), parameter :: fac    = 0.9_prec
 
-        real(kind=prec) :: dt0, err
+        real(kind=prec) :: dt0, err, h
         integer :: ptr0
         integer :: j, k, k1 
 
@@ -150,13 +154,13 @@ contains
             do k= 0, this%n1-1
                 this%c(k+1) =  this%dt**k/(k+1.0_prec)
             end do
-            call solve_vander_trans(this%tt, this%c, this%n1)  !! TODO
+            call solve_vander_trans(this%tt, this%c, this%n1)  
 
             do k= 1, this%n1
                 k1 = mod(k-this%n1+this%ptr-1 +this%n, this%n) + 1
                 call this%psi1%axpy(this%rhs_back(k1), cmplx(this%c(k)*this%dt, kind=prec))
             end do
-            call this%psi1%propagate_A(this%dt)   
+            call this%psi1%propagate_A(this%dt) 
 
             if (this%bootstrap_mode) then
                 this%ptr = this%ptr + 1
@@ -174,13 +178,14 @@ contains
             do k = 1, this%n1+1
                 this%tt(k) = this%t_back(mod(k-this%n1+this%ptr-2 +this%n, this%n)+1)
             end do    
+            h = this%tt(this%n1)
             do k = 1, this%n1+1
-                this%tt(k) = this%tt(k)-this%tt(this%n1)
+                this%tt(k) = this%tt(k)-h
             end do
             do k = 0, this%n1
                 this%c(k+1) =  this%dt**k/(k+1.0_prec)
             end do
-            call solve_vander_trans(this%tt, this%c, this%n1+1)  !! TODO
+            call solve_vander_trans(this%tt, this%c, this%n1+1) 
 
             do k = 1, this%n1+1
                 k1 = mod(k-this%n1+this%ptr-2 +this%n, this%n) + 1
@@ -190,7 +195,7 @@ contains
 
           ! compute error estimate and new stepsize
             err = this%psi%distance(this%psi1)/this%tol
-            this%dt = this%dt*min(facmax, max(facmin, fac*(1.0_prec/err)**(1.0_prec/(this%n1+1))))
+            this%dt = this%dt*min(facmax, max(facmin, fac*(1.0_prec/err)**(1.0_prec/(real(this%n1, kind=prec)+1_prec))))
 
             if (err .ge. 1.0_prec) then ! reject step
                 call this%psi1%copy(this%psi0)
