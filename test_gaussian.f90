@@ -1,34 +1,44 @@
 program test_gaussian
     use wavefunctions_fourier1d
     implicit none
-    
+!
+! Solve the free Schr\"{o}dinger equation
+!   $\partial_t\psi(x,t) = A\psi(x,t)$ where $A=-\frac{1}{2}\Delta$
+!
+! The initial value is such that the solution is a moving and 
+! spreading Gaussian wave packet.
+!
     type(fourier1d) :: m
     type(wf_fourier1d) :: psi, psi_ex
     real(kind=prec) :: err, t0, tend
 
-  ! initialize fourier1d spectral method
-  ! computational domain = [-32, 32]
-  ! number of gridpoints nx = 256
+  ! define the spectral method on a grid of 256 points on
+  ! the computational domain [-32, +32]
     m = fourier1d(256, -32.0_prec, +32.0_prec)
 
     t0 = 0.0_prec
     tend = 5.0_prec
 
-  ! initialize wave function psi at t=t0 
+  ! allocate a wavefunction psi for the spectral method m
     psi = wf_fourier1d(m)
+
+  ! define the initial value for psi at t=t0 by the function gaussian   
     call psi%set(gaussian, t0) 
 
   ! propagate psi from t=t0 to t=tend
     call psi%propagate_A(tend-t0)
 
-  ! initialize wave function psi_ex (the exact solution) at t=tend
-    psi_ex = wf_fourier1d(m)
-    call psi_ex%set(gaussian, tend)
+  ! allocate a wavefunction psi_ref for the reference solution
+    psi_ref = wf_fourier1d(m)
+  
+  ! define the reference solution at t=tend by the function gaussian
+    call psi_ref%set(gaussian, tend)
 
   ! compute the error of the (numerically) propagated solution
   ! compared to the exact solution
-    err = psi%distance(psi_ex)
+    err = psi%distance(psi_ref)
 
+  ! Should be small (if not something went wrong :( )
     print *, "err = ", err
 
   ! clean up

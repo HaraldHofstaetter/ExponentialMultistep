@@ -1,8 +1,8 @@
-INC_FFTW3 = /usr/include
-LIB_FFTW3 = /usr/lib
+#INC_FFTW3 = /usr/include
+#LIB_FFTW3 = /usr/lib
 
-#INC_FFTW3 = $(HOME)/include
-#LIB_FFTW3 = $(HOME)/lib
+INC_FFTW3 = $(HOME)/include
+LIB_FFTW3 = $(HOME)/lib
 
 EXECUTABLES = test_gaussian test_soliton test_crossing_solitons
 
