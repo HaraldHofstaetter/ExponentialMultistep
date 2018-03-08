@@ -1,8 +1,9 @@
-#INC_FFTW3 = /usr/include
-#LIB_FFTW3 = /usr/lib
+INC_FFTW3 = /usr/include # location of the file fftw3.f03 
+LIB_FFTW3 = /usr/lib     # location of the file libfftw3.a
 
-INC_FFTW3 = $(HOME)/include
-LIB_FFTW3 = $(HOME)/lib
+#INC_FFTW3 = $(HOME)/include # location of the file fftw3.f03 
+#LIB_FFTW3 = $(HOME)/lib     # location of the file libfftw3.a
+
 
 EXECUTABLES = test_gaussian test_soliton test_crossing_solitons
 
