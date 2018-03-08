@@ -22,18 +22,18 @@ test_gaussian: phi_functions.o wavefunctions_fourier1d.o test_gaussian.o
 	    wavefunctions_fourier1d.o  phi_functions.o \
 	    -L$(LIB_FFTW3) -lfftw3
 
-adams_lawson.o adams_lawson.mod: wavefunctions_fourier1d.mod adams_lawson.f90
-	gfortran -g -c -o adams_lawson.o adams_lawson.f90
+exponential_multistep.o exponential_multistep.mod: wavefunctions_fourier1d.mod exponential_multistep.f90
+	gfortran -g -c -o exponential_multistep.o exponential_multistep.f90
 
-adams_exponential.o adams_exponential.mod: wavefunctions_fourier1d.mod adams_exponential.f90
-	gfortran -g -c -o adams_exponential.o adams_exponential.f90
+exponential_multistep.o exponential_multistep.mod: wavefunctions_fourier1d.mod exponential_multistep.f90
+	gfortran -g -c -o exponential_multistep.o exponential_multistep.f90
 
-test_soliton.o: adams_lawson.mod test_soliton.f90
+test_soliton.o: exponential_multistep.mod test_soliton.f90
 	gfortran -g -c -o test_soliton.o test_soliton.f90
 
-test_soliton: phi_functions.o wavefunctions_fourier1d.o adams_lawson.o test_soliton.o
+test_soliton: phi_functions.o wavefunctions_fourier1d.o exponential_multistep.o test_soliton.o
 	gfortran -g -o test_soliton test_soliton.o \
-	    adams_lawson.o wavefunctions_fourier1d.o phi_functions.o \
+	    exponential_multistep.o wavefunctions_fourier1d.o phi_functions.o \
 	    -L$(LIB_FFTW3) -lfftw3
 
 clean:

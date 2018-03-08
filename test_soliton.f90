@@ -1,6 +1,6 @@
 program test_soliton
     use wavefunctions_fourier1d
-    use adams_lawson
+    use exponential_multistep
     implicit none
 
     type(fourier1d) :: m
