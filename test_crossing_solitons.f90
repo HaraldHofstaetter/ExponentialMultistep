@@ -3,13 +3,13 @@ program test_crossing_solitons
     use exponential_multistep
     implicit none
 !    
-! Solve the nonlinear Schr\"{o}dinger equation  
+! Solve the cubic nonlinear Schr\"{o}dinger equation  
 !    $$i\partial_t\psi(x,t) = A\psi(x,t) + B(\psi(x,t),x,t))$$    
-! where $A=-\frac{1}{2}\Delta$ and $B(u,x,t) = -1/2|u|^2\u$.
+! where $A=-\frac{1}{2}\Delta$ and $B(u,x,t) = -1/2|u|^2\u$
 ! is defined by the Fortran function B(u,x,t) below.
 !
 ! The initial value defined by the Fortran function psi_0(x,t) 
-! below gives a solution  with two crossing solitons.
+! below gives a solution with two crossing solitons.
 !
     
     type(fourier1d) :: m

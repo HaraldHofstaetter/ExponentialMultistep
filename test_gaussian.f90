@@ -9,7 +9,7 @@ program test_gaussian
 ! spreading Gaussian wave packet.
 !
     type(fourier1d) :: m
-    type(wf_fourier1d) :: psi, psi_ex
+    type(wf_fourier1d) :: psi, psi_ref
     real(kind=prec) :: err, t0, tend
 
   ! define the spectral method on a grid of 256 points on
@@ -43,7 +43,7 @@ program test_gaussian
 
   ! clean up
     call psi%finalize
-    call psi_ex%finalize
+    call psi_ref%finalize
     call m%finalize
 
 contains

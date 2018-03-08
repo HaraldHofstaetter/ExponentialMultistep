@@ -3,10 +3,10 @@ program test_soliton
     use exponential_multistep
     implicit none
 !
-! Solve the cubic nonlinear Schr\"{o}dinger equation  
+! Solve the nonlinear Schr\"{o}dinger equation  
 !    $$i\partial_t\psi(x,t) = A\psi(x,t) + B(\psi(x,t),x,t))$$    
 ! where $A=-\frac{1}{2}\Delta$ and $B(u,x,t) = V(x,t)*u -\frac{1}{2}|u|^2\u$ 
-! is defined by the Fortran function B(u,x,t).
+! is defined by the Fortran function B(u,x,t) below.
 ! Here the time-dependent potential is given by $V(x,t) = \frac{1}{2}|\psi_{ex}(x,t)|^2$
 ! where $psi_{ex}(x,t)=\frac{a e^{\frac{1}{2}i((a^2-b^2)t-bx)}{\cosh(a(bt+x-c))}$
 !
@@ -15,7 +15,7 @@ program test_soliton
 !
 
     type(fourier1d) :: m
-    type(wf_fourier1d) :: psi, psi_ex
+    type(wf_fourier1d) :: psi, psi_ref
     type(adaptive_adams_lawson_time_stepper) :: time_stepper
     !type(adaptive_adams_exponential_time_stepper) :: time_stepper
 
@@ -32,7 +32,7 @@ program test_soliton
     t0 = 0.0_prec
     tend = 1.0_prec
 
-  ! allocate a wavefunction psi_ref for the spectral method m
+  ! allocate a wavefunction psi for the spectral method m
     psi = wf_fourier1d(m)
 
   ! define the initial value for psi at t=t0 by the function soliton 
@@ -65,7 +65,7 @@ program test_soliton
 
   ! compute the error of the (numerically) propagated solution
   ! compared to the reference solution.
-  ! Should be small (if not something went wrong :) )
+  ! Should be small (if not something went wrong :( )
     err = psi%distance(psi_ref)
 
     print *, "err = ", err
