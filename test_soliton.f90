@@ -5,7 +5,8 @@ program test_soliton
 
     type(fourier1d) :: m
     type(wf_fourier1d) :: psi, psi_ex
-    type(adaptive_adams_lawson_time_stepper) :: time_stepper
+    type(adaptive_adams_lawson_time_stepper) :: time_stepper1
+    type(adaptive_adams_exponential_time_stepper) :: time_stepper2
 
     real(kind=prec) :: err, t0, tend, tol, time_old
     integer :: p, step
@@ -23,14 +24,37 @@ program test_soliton
     psi = wf_fourier1d(m)
     call psi%set(soliton, t0)
 
-    p = 5
-    tol = 1e-7_prec
+    p = 4
+    tol = 1e-5_prec
 
+!  ! *** Lawson ***
+!
+!    call psi%set(soliton, t0)
+!    step = 0
+!    time_old = psi%time
+!    time_stepper1 = adaptive_adams_lawson_time_stepper(psi, t0, tend, tol, p, tol)
+!    do while (.not. time_stepper1%done() )
+!         call time_stepper1%next
+!
+!         print *, "step=",step," t=", psi%time, " dt=", psi%time-time_old
+!         time_old = psi%time
+!         step = step + 1
+!    end do
+!
+!  ! compute the error of the (numerically) propagated solution
+!  ! compared to the exact solution
+!    err = psi%distance(psi_ex)
+!
+!    print *, "err = ", err
+!
+  ! *** Exponential (with phi functions ***
+
+    call psi%set(soliton, t0)
     step = 0
     time_old = psi%time
-    time_stepper = adaptive_adams_lawson_time_stepper(psi, t0, tend, tol, p, tol)
-    do while (.not. time_stepper%done() )
-         call time_stepper%next
+    time_stepper2 = adaptive_adams_exponential_time_stepper(psi, t0, tend, tol, p, tol)
+    do while (.not. time_stepper2%done() )
+         call time_stepper2%next
 
          print *, "step=",step," t=", psi%time, " dt=", psi%time-time_old
          time_old = psi%time

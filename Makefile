@@ -25,9 +25,6 @@ test_gaussian: phi_functions.o wavefunctions_fourier1d.o test_gaussian.o
 exponential_multistep.o exponential_multistep.mod: wavefunctions_fourier1d.mod exponential_multistep.f90
 	gfortran -g -c -o exponential_multistep.o exponential_multistep.f90
 
-exponential_multistep.o exponential_multistep.mod: wavefunctions_fourier1d.mod exponential_multistep.f90
-	gfortran -g -c -o exponential_multistep.o exponential_multistep.f90
-
 test_soliton.o: exponential_multistep.mod test_soliton.f90
 	gfortran -g -c -o test_soliton.o test_soliton.f90
 
