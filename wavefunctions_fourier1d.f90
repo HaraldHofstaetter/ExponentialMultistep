@@ -6,7 +6,7 @@ module wavefunctions_fourier1d
 
   ! FFTW stuff
     include 'fftw3.f03'
-    integer(C_INT) :: fftw_planning_rigor = FFTW_PATIENT
+    integer(c_int) :: fftw_planning_rigor = FFTW_PATIENT
     character(len=64, kind=c_char) :: fftw_wisdom_file = c_char_'fftw_wisdom' // c_null_char    
     
     integer, parameter :: prec=selected_real_kind(p=15)
@@ -14,7 +14,6 @@ module wavefunctions_fourier1d
     public :: fourier1d, wf_fourier1d, psi_1d, B_1d
 
     abstract interface
-    
         function psi_1d(x, t)
             import prec
             complex(kind=prec) :: psi_1d
@@ -51,19 +50,17 @@ module wavefunctions_fourier1d
 
 
     type wf_fourier1d
-      ! high level data
         class(fourier1d), pointer   :: m 
         real(kind=prec)             :: time = 0.0_prec
         complex(kind=prec), pointer :: u(:)
 
-      ! lower level data
-        type(c_ptr)  :: plan_forward 
-        type(c_ptr)  :: plan_backward        
+        type(c_ptr), private  :: plan_forward 
+        type(c_ptr), private  :: plan_backward        
     contains
         procedure :: set
         procedure :: print
         procedure :: propagate_A
-    !    procedure :: add_phi_A
+        procedure :: add_phi_A
         procedure :: eval_B
         procedure :: copy
         procedure :: scale
@@ -107,7 +104,7 @@ contains
             this%eigvals_A(m:nx) = (/ (real(k, kind=prec)**2, k=m-nx-1, -1) /)
             this%eigvals_A = ((2.0_prec*pi/d)**2/2.0_prec) * this%eigvals_A
 
-      ! initialize if not already been done
+      ! initialize fftw if not already been done
         if (.not. fftw_already_initialized) then
             ret = fftw_import_wisdom_from_filename(fftw_wisdom_file)
             fftw_already_initialized = .true.
@@ -210,11 +207,38 @@ contains
         call fftw_execute_dft(this%plan_backward, this%u, this%u)
 
       ! scale by 1/nx (not already done by fftw)  
-        this%u = cmplx(1.0_prec/this%m%nx, kind=prec)*this%u
+        this%u = (1.0_prec/this%m%nx)*this%u
 
       ! propagate time:
         this%time = this%time + dt        
     end subroutine propagate_A
+
+
+    subroutine add_phi_A(this, other, dt, n, coeff) ! other = other + coeff*phi_n(dt*A)*this 
+                                                    ! (where A = -i*Laplacian)
+        implicit none
+        class(wf_fourier1d), intent(in) :: this
+        class(wf_fourier1d), intent(inout) :: other 
+        real(kind=prec), intent(in) :: dt
+        integer, intent(in) :: n 
+        real(kind=prec), intent(in) :: coeff 
+
+      ! transform to frequency space 
+        call fftw_execute_dft(this%plan_forward, this%u, this%u) 
+        call fftw_execute_dft(other%plan_forward, other%u, other%u) 
+      
+      ! apply operator (diagonal in frequency space)
+        other%u = other%u + coeff*phi(cmplx(0.0_prec, -dt, kind=prec)*this%m%eigvals_A, n) * this%u
+
+      ! back-transform to real space 
+        call fftw_execute_dft(this%plan_backward, this%u, this%u)
+        call fftw_execute_dft(other%plan_backward, other%u, other%u) 
+
+      ! scale by 1/nx (not already done by fftw)  
+        this%u = (1.0_prec/this%m%nx)*this%u
+        other%u = (1.0_prec/other%m%nx)*other%u
+
+    end subroutine add_phi_A
 
 
     subroutine eval_B(this, other)  ! other = B(psi)
