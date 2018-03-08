@@ -1,5 +1,5 @@
-module exponential_multistep
-!    time_stepper = adaptive_adams_lawson(psi, t0, tend, tol, dt0, p)
+module adams_lawson
+!    time_stepper = adaptive_adams_lawson_time_stepper(psi, t0, tend, tol, dt0, p)
 !    do while (.not. time_stepper%done() )
 !
 !         ! do something with psi
@@ -11,7 +11,7 @@ module exponential_multistep
 
     implicit none 
     
-    type adaptive_adams_lawson ! iterator
+    type adaptive_adams_lawson_time_stepper 
         private
         
         real(kind=prec) :: t
@@ -38,16 +38,16 @@ module exponential_multistep
     contains
         procedure :: done
         procedure :: next
-    end type adaptive_adams_lawson
+    end type adaptive_adams_lawson_time_stepper
 
-    interface adaptive_adams_lawson ! constructor
-        module procedure new_adaptive_adams_lawson
-    end interface adaptive_adams_lawson
+    interface adaptive_adams_lawson_time_stepper ! constructor
+        module procedure new_adaptive_adams_lawson_time_stepper
+    end interface adaptive_adams_lawson_time_stepper
 
 contains
-    function new_adaptive_adams_lawson(psi, t0, tend, tol, p, dt0) result(this)
+    function new_adaptive_adams_lawson_time_stepper(psi, t0, tend, tol, p, dt0) result(this)
         implicit none
-        type(adaptive_adams_lawson) :: this
+        type(adaptive_adams_lawson_time_stepper) :: this
         type(wf_fourier1d), target, intent(in) :: psi
         real(kind=prec), intent(in) :: t0
         real(kind=prec), intent(in) :: tend
@@ -95,11 +95,11 @@ contains
 
         this%ptr = this%n1
 
-    end function new_adaptive_adams_lawson
+    end function new_adaptive_adams_lawson_time_stepper
 
     function done(this) result(f)
         implicit none
-        class(adaptive_adams_lawson), intent(inout) :: this
+        class(adaptive_adams_lawson_time_stepper), intent(inout) :: this
         logical :: f
 
         integer :: j
@@ -122,7 +122,7 @@ contains
 
     subroutine next(this)
         implicit none
-        class(adaptive_adams_lawson), intent(inout) :: this
+        class(adaptive_adams_lawson_time_stepper), intent(inout) :: this
 
         real(kind=prec), parameter :: facmin = 0.25_prec
         real(kind=prec), parameter :: facmax = 4.0_prec
@@ -248,4 +248,4 @@ contains
     end subroutine solve_vander_trans
 
 
-end module exponential_multistep
+end module adams_lawson

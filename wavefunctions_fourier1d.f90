@@ -1,5 +1,6 @@
 module wavefunctions_fourier1d
     use, intrinsic :: iso_c_binding
+    use :: phi_functions
 
     implicit none
 
@@ -62,6 +63,7 @@ module wavefunctions_fourier1d
         procedure :: set
         procedure :: print
         procedure :: propagate_A
+    !    procedure :: add_phi_A
         procedure :: eval_B
         procedure :: copy
         procedure :: scale

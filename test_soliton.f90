@@ -1,16 +1,16 @@
 program test_soliton
     use wavefunctions_fourier1d
-    use exponential_multistep
+    use adams_lawson
     implicit none
 
     type(fourier1d) :: m
     type(wf_fourier1d) :: psi, psi_ex
-    type(adaptive_adams_lawson) :: time_stepper
+    type(adaptive_adams_lawson_time_stepper) :: time_stepper
 
     real(kind=prec) :: err, t0, tend, tol, time_old
     integer :: p, step
 
-    m = fourier1d(256, -16.0_prec, +16.0_prec)
+    m = fourier1d(1024, -16.0_prec, +16.0_prec)
     call m%set_B(B)
     
     t0 = 0.0_prec
@@ -23,12 +23,12 @@ program test_soliton
     psi = wf_fourier1d(m)
     call psi%set(soliton, t0)
 
-    p = 4
-    tol = 1e-5_prec
+    p = 5
+    tol = 1e-7_prec
 
     step = 0
     time_old = psi%time
-    time_stepper = adaptive_adams_lawson(psi, t0, tend, tol, p, tol)
+    time_stepper = adaptive_adams_lawson_time_stepper(psi, t0, tend, tol, p, tol)
     do while (.not. time_stepper%done() )
          call time_stepper%next
 
