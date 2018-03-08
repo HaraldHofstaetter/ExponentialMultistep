@@ -4,7 +4,7 @@ LIB_FFTW3 = /usr/lib
 #INC_FFTW3 = $(HOME)/include
 #LIB_FFTW3 = $(HOME)/lib
 
-EXECUTABLES = test_gaussian test_soliton
+EXECUTABLES = test_gaussian test_soliton test_crossing_solitons
 
 all: $(EXECUTABLES)
 
@@ -32,6 +32,18 @@ test_soliton: phi_functions.o wavefunctions_fourier1d.o exponential_multistep.o 
 	gfortran -g -o test_soliton test_soliton.o \
 	    exponential_multistep.o wavefunctions_fourier1d.o phi_functions.o \
 	    -L$(LIB_FFTW3) -lfftw3
+
+test_crossing_solitons.o: exponential_multistep.mod test_crossing_solitons.f90
+	gfortran -g -c -o test_crossing_solitons.o test_crossing_solitons.f90
+
+test_crossing_solitons: phi_functions.o wavefunctions_fourier1d.o exponential_multistep.o test_crossing_solitons.o
+	gfortran -g -o test_crossing_solitons test_crossing_solitons.o \
+	    exponential_multistep.o wavefunctions_fourier1d.o phi_functions.o \
+	    -L$(LIB_FFTW3) -lfftw3
+
+demo: test_crossing_solitons
+	./test_crossing_solitons > stepsizes.txt 
+	gnuplot -p -e 'plot "stepsizes.txt" using ($$2):($$3) with lines'
 
 clean:
 	rm *.o *.mod $(EXECUTABLES)

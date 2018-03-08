@@ -250,7 +250,7 @@ contains
                 call this%psi1%copy(this%psi0) !>>> psi1 = psi0
                 call this%psi%copy(this%psi0)  !>>> psi  = psi0
                 this%ptr = ptr0
-                print *, "t=", this%t, " err=", err, " dt=", this%dt, " rejected..."
+                print *, "# t=", this%t, " err=", err, " dt=", this%dt, " rejected..."
             end if
         end do
 
@@ -451,7 +451,7 @@ contains
                 call this%psi1%copy(this%psi0) !>>> psi1 = psi0
                 call this%psi%copy(this%psi0)  !>>> psi  = psi0
                 this%ptr = ptr0
-                print *, "t=", this%t, " err=", err, " dt=", this%dt, " rejected..."
+                print *, "# t=", this%t, " err=", err, " dt=", this%dt, " rejected..."
             end if
         end do
 

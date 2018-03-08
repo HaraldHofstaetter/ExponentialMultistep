@@ -40,7 +40,6 @@ program test_soliton
 !         time_old = psi%time
 !         step = step + 1
 !    end do
-!
 !  ! compute the error of the (numerically) propagated solution
 !  ! compared to the exact solution
 !    err = psi%distance(psi_ex)
@@ -55,7 +54,6 @@ program test_soliton
     time_stepper2 = adaptive_adams_exponential_time_stepper(psi, t0, tend, tol, p, tol)
     do while (.not. time_stepper2%done() )
          call time_stepper2%next
-
          print *, "step=",step," t=", psi%time, " dt=", psi%time-time_old
          time_old = psi%time
          step = step + 1
